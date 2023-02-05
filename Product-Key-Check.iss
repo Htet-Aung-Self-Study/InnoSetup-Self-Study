@@ -55,29 +55,89 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: TestProcedure
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent;
 
 [Code]
+
 var
   ProductKeyInputPage: TInputQueryWizardPage;
 
-procedure AddProductKeyPage();
+//A http request
+function HttpRequest(url : string): string;
+var
+  WinHttpReq: Variant;
 begin
-  ProductKeyInputPage := CreateInputQueryPage(
-    wpWelcome,
-    'Product!',
-    'Please input product key to proceed',
-    ''
-  );
-  ProductKeyInputPage.Add('Product Key: ', False);
+  WinHttpReq := CreateOleObject('WinHttp.WinHttpRequest.5.1');
+  WinHttpReq.Open('GET', url, False);
+  WinHttpReq.Send('');
+  if WinHttpReq.Status <> 200 then
+  begin
+    Result := 'HTTP Error: ' + IntToStr(WinHttpReq.Status) + ' ' + WinHttpReq.StatusText;
+  end
+    else
+  begin
+    Result := WinHttpReq.ResponseText;
+  end;
 end;
 
+//After Next Button on Product Key Page is clicked
+function ProductKeyPageNextButtonClicked(Sender: TWizardPage): Boolean;
+var
+  url : string;
+  ProductKeyCheckResult : string;
+begin
+  url := 'YourLink'+ProductKeyInputPage.Values[0];
+  Result := True;
+  ProductKeyCheckResult := HttpRequest(url);
+  if (ProductKeyCheckResult = '1') then
+  begin
+    //Product Key exists on the server! Installing the application...
+    Result := True;
+    MsgBox('You have used up the product key: "' + ProductKeyInputPage.Values[0] + '", Please ensure that you finish the installation process so that the product key does not go to waste!' , mbInformation, MB_OK);
+  end
+  else
+  begin
+    if (ProductKeyCheckResult = '0') then
+      begin
+        //Product Key does not exist on the server! Restart the procedure
+        Result := False;
+        MsgBox('Your product key: "' + ProductKeyInputPage.Values[0] + '" is not valid!' , mbError, MB_OK);
+      end
+    else
+      begin
+        //Some kind of Http Error has occured
+        Result := False;
+        MsgBox('A proper internet connection is required to check if the product key is valid or not. Please check your connection and try again!' , mbError, MB_OK);
+      end;  
+  end;
+end;
+
+//Checking the validity of the product key
+procedure CheckProductKeyValidity(Sender : TObject);
+begin
+  if (length(ProductKeyInputPage.Values[0]) <> 20) then
+  begin
+    
+  end
+  else
+  begin
+    
+  end;
+end;
+
+//Display the page with the inputfield
+procedure DisplayProductKeyPage();
+begin
+  ProductKeyInputPage := CreateInputQueryPage(wpWelcome, 'Product Key', 'Please input product key to proceed (Make sure you are connected to the internet)','');
+
+  ProductKeyInputPage.Add('Product Key: ', False);
+
+  ProductKeyInputPage.Edits[0].onChange := @CheckProductKeyValidity;
+  ProductKeyInputPage.OnNextButtonClick := @ProductKeyPageNextButtonClicked;  
+end;
+
+//Initialize the wizard
 procedure InitializeWizard;
 begin
-  AddProductKeyPage();
-end;
-
-procedure TestProcedure;
-begin
-  Msgbox('Test', mbError, MB_OK);
+  DisplayProductKeyPage();
 end;
