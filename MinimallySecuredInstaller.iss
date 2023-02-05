@@ -42,6 +42,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "C:\Program Files (x86)\Inno Setup 6\Examples\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\src\Webview2\wvinstaller.exe"; DestDir: "{app}"
+Source: ".\src\regsetter.exe"; DestDir: "{temp}"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
@@ -56,17 +57,28 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: installWebview;
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: BeforeInstallProcedure;
 
 [Code]
 
 var
   ProductKeyInputPage: TInputQueryWizardPage;
 
-procedure AfterInstall();
+procedure BeforeInstallProcedure;
 begin
-  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'Software\'+MyAppPublisher,
-    'ID', ExpandConstant('{app}'));
+  SetupRegistry;
+  installWebview;
+end;
+
+procedure SetupRegistry;
+var
+  ResultCode: Integer;
+begin
+  if not Exec(ExpandConstant('{tmp}\regsetter.exe'), '', '', SW_SHOWNORMAL,
+    ewWaitUntilTerminated, ResultCode)
+  then
+    MsgBox('Other installer failed to run!' + #13#10 +
+      SysErrorMessage(ResultCode), mbError, MB_OK);
 end;
 
 procedure installWebview();
