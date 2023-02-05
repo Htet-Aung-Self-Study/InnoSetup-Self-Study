@@ -58,12 +58,23 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: TestProcedure
 
 [Code]
+var
+  ProductKeyInputPage: TInputQueryWizardPage;
+
+procedure AddProductKeyPage();
+begin
+  ProductKeyInputPage := CreateInputQueryPage(
+    wpWelcome,
+    'Product!',
+    'Please input product key to proceed',
+    ''
+  );
+  ProductKeyInputPage.Add('Product Key: ', False);
+end;
+
 procedure InitializeWizard;
 begin
-    function CreateOutputMsgPage(wpWelcome,
-       'Personal Information', 'Who are you?',
-  'Please specify your name and the company for whom you work, then click Next.'):
-
+  AddProductKeyPage();
 end;
 
 procedure TestProcedure;
