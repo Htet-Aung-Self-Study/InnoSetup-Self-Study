@@ -26,9 +26,9 @@ ChangesAssociations=yes
 DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
-OutputDir=C:\Users\WebRTC User\Documents\Htet Aung Hlaing\Self-Study\InnoSetup\bin
+OutputDir=".\bin"
 OutputBaseFilename=mysetup
-SetupIconFile= "..\assets\InstallerIcon.ico"s
+SetupIconFile= ".\assets\InstallerIcon.ico"
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -55,5 +55,18 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: TestProcedure
 
+[Code]
+procedure InitializeWizard;
+begin
+    function CreateOutputMsgPage(wpWelcome,
+       'Personal Information', 'Who are you?',
+  'Please specify your name and the company for whom you work, then click Next.'):
+
+end;
+
+procedure TestProcedure;
+begin
+  Msgbox('Test', mbError, MB_OK);
+end;
