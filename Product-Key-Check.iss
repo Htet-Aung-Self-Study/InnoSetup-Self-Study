@@ -41,6 +41,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "C:\Program Files (x86)\Inno Setup 6\Examples\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\src\Webview2\wvinstaller.exe"; DestDir: "{app}"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
@@ -55,12 +56,29 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent;
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: installWebview;
 
 [Code]
 
 var
   ProductKeyInputPage: TInputQueryWizardPage;
+
+procedure AfterInstall();
+begin
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'Software\'+MyAppPublisher,
+    'ID', ExpandConstant('{app}'));
+end;
+
+procedure installWebview();
+var
+  ResultCode: Integer;
+begin
+  if not Exec(ExpandConstant('{app}\wvinstaller.exe'), '', '', SW_SHOWNORMAL,
+    ewWaitUntilTerminated, ResultCode)
+  then
+    MsgBox('Webview Installer has failed to run!' + #13#10 +
+      SysErrorMessage(ResultCode), mbError, MB_OK);
+end;
 
 //A http request
 function HttpRequest(url : string): string;
@@ -86,7 +104,7 @@ var
   url : string;
   ProductKeyCheckResult : string;
 begin
-  url := 'YourLink'+ProductKeyInputPage.Values[0];
+  url := 'LinkObject'+ProductKeyInputPage.Values[0];
   Result := True;
   ProductKeyCheckResult := HttpRequest(url);
   if (ProductKeyCheckResult = '1') then
@@ -100,8 +118,8 @@ begin
     if (ProductKeyCheckResult = '0') then
       begin
         //Product Key does not exist on the server! Restart the procedure
-        Result := False;
-        MsgBox('Your product key: "' + ProductKeyInputPage.Values[0] + '" is not valid!' , mbError, MB_OK);
+        Result := True;
+        MsgBox('Your product key: "' + ProductKeyInputPage.Values[0] + '" is not valid! ' + ProductKeyCheckResult , mbError, MB_OK);
       end
     else
       begin
