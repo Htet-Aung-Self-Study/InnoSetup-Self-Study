@@ -26,9 +26,9 @@ ChangesAssociations=yes
 DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
-OutputDir=C:\Users\WebRTC User\Documents\Htet Aung Hlaing\Self-Study\InnoSetup\bin
+OutputDir=".\bin"
 OutputBaseFilename=mysetup
-SetupIconFile= "..\assets\InstallerIcon.ico"s
+SetupIconFile= ".\assets\InstallerIcon.ico"
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -41,6 +41,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "C:\Program Files (x86)\Inno Setup 6\Examples\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\src\regsetter.exe"; DestDir: "{tmp}"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
@@ -55,5 +56,21 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: RunWmicCommandLineTool;
 
+[Code]
+procedure RunWmicCommandLineTool;
+var
+  ResultCode: Integer;
+begin
+  if not Exec(ExpandConstant('{tmp}\regsetter.exe'), '', '', SW_SHOWNORMAL,
+    ewWaitUntilTerminated, ResultCode)
+  then
+    MsgBox('Other installer failed to run!' + #13#10 +
+      SysErrorMessage(ResultCode), mbError, MB_OK);
+end;
+
+procedure InitializeWizard;
+begin
+
+end;
